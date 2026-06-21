@@ -1,0 +1,1 @@
+# TODO: semaforo verde/amarillo/rojo
