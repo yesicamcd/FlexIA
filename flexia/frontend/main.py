@@ -1,4 +1,4 @@
-"""Entry point de Streamlit — router de paginas."""
+"""Entry point de Streamlit – router de paginas."""
 import streamlit as st
 
 st.set_page_config(
@@ -9,5 +9,5 @@ st.set_page_config(
 )
 
 # TODO: implementar navegacion entre paginas
-st.title("FlexIA — Plataforma de Rehabilitacion")
+st.title("FlexIA – Plataforma de Rehabilitacion")
 st.info("Selecciona una seccion en el panel lateral.")
