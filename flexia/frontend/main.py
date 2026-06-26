@@ -1,4 +1,3 @@
-"""Entry point de Streamlit — router de paginas."""
 import streamlit as st
 
 st.set_page_config(
@@ -8,6 +7,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# TODO: implementar navegacion entre paginas
-st.title("FlexIA — Plataforma de Rehabilitacion")
-st.info("Selecciona una seccion en el panel lateral.")
+# Definimos el menú solo con las páginas que sabemos que existen y armamos
+paginas = st.navigation([
+    st.Page("pages/dashboards/clinical_dashboard_page.py", title="Dashboard Clínico", icon="📊"),
+    st.Page("pages/patients/patient_list_page.py", title="Lista de Pacientes", icon="📋"),
+    st.Page("pages/patients/patient_detail_page.py", title="Detalle Paciente", icon="👤")
+])
+
+# Ejecutamos la navegación
+paginas.run()
