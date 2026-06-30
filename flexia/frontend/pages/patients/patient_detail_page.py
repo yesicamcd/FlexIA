@@ -1,88 +1,91 @@
-"""Detalle de paciente + historial clinico."""
+"""Historial clinico real del paciente desde Supabase."""
 import streamlit as st
-
-def get_mock_patient_history(patient_id: str):
-    """
-    Simula el caso de uso GetPatientHistoryUseCase.
-    Mantiene la separación de datos y UI (Regla 2 y 9).
-    """
-    # Base de datos simulada por ID de paciente
-    historiales = {
-        "PAC-001": {
-            "nombre": "Juan Pérez",
-            "edad": 34,
-            "diagnostico": "Rehabilitación LCA - Fase 2",
-            "fecha_inicio": "2026-05-10",
-            "profesional": "Lic. Martín Suárez",
-            "ifi": "80%",
-            "rango_articular": [110, 115, 120, 122, 125]
-        },
-        "PAC-002": {
-            "nombre": "María Gómez",
-            "edad": 42,
-            "diagnostico": "Manguito Rotador - Movilidad activa",
-            "fecha_inicio": "2026-06-01",
-            "profesional": "Dra. Elena Rostova",
-            "ifi": "65%",
-            "rango_articular": [45, 50, 55, 60, 62]
-        }
-    }
-    # Si no encuentra el ID, devolvemos el primero por defecto para el mockup
-    return historiales.get(patient_id, historiales["PAC-001"])
+from frontend.state.auth_state import get_current_user
+from shared.container import get_patient_history_use_case
 
 
-def render(patient_id: str):
-    # Obtenemos los datos clínicos simulando la arquitectura por capas
-    paciente = get_mock_patient_history(patient_id)
-    
-    st.title(f"👤 Historial Clínico: {paciente['nombre']}")
-    st.caption(f"Código identificador único: {patient_id}")
+def render():
+    user = get_current_user()
+    if not user:
+        st.error("Sesion no iniciada.")
+        return
+
+    patient_id = st.session_state.get("selected_patient_id")
+    patient_name = st.session_state.get("selected_patient_name", "Paciente")
+
+    if not patient_id:
+        st.warning("Selecciona un paciente desde la lista.")
+        if st.button("Ir a lista de pacientes"):
+            st.switch_page("pages/patients/patient_list_page.py")
+        return
+
+    st.title(f"Historial Clinico: {patient_name}")
     st.markdown("---")
-    
-    # Ficha de Datos Generales
-    with st.container(border=True):
-        st.subheader("Información de Ficha")
+
+    try:
+        uc = get_patient_history_use_case()
+        history = uc.execute(patient_id)
+    except Exception as e:
+        st.error(f"Error al cargar historial: {e}")
+        return
+
+    if not history:
+        st.info("Este paciente no tiene sesiones registradas.")
+        if st.button("Iniciar primera sesion", type="primary"):
+            st.session_state["selected_patient_id"] = patient_id
+            st.switch_page("pages/sessions/session_create_page.py")
+        return
+
+    ifis = [s["ifi_score"] for s in history if s["ifi_score"] is not None]
+    if ifis:
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.write(f"**Edad:** {paciente['edad']} años")
+            st.metric("IFI Ultima Sesion", f"{ifis[0]:.1f}")
         with col2:
-            st.write(f"**Diagnóstico:** {paciente['diagnostico']}")
+            st.metric("IFI Promedio", f"{sum(ifis)/len(ifis):.1f}")
         with col3:
-            st.write(f"**Profesional:** {paciente['profesional']}")
+            st.metric("Total Sesiones", len(history))
 
-    st.write("")
+        st.markdown("---")
+        st.subheader("Evolucion del IFI")
+        import pandas as pd
+        df = pd.DataFrame([
+            {
+                "Fecha": s["session_date"][:10],
+                "IFI":   s["ifi_score"],
+            }
+            for s in reversed(history)
+            if s["ifi_score"] is not None
+        ])
+        if not df.empty:
+            st.line_chart(df.set_index("Fecha")["IFI"])
 
-    # Evolución y Gráficos Biomecánicos
-    st.subheader("📊 Análisis de Evolución Cinemática")
-    
-    col_metric, col_chart = st.columns([1, 2])
-    
-    with col_metric:
-        st.metric(
-            label="Índice Funcional Integrado (IFI)", 
-            value=paciente["ifi"], 
-            delta="Progreso dentro del rango objetivo"
-        )
-        st.write("El índice refleja una técnica correcta de ejecución sin registrar compensaciones cruzadas.")
-        
-    with col_chart:
-        st.write("**Evolución del Rango Articular Máximo (ROM) en grados:**")
-        # Generamos un gráfico de líneas real de Streamlit con los datos del paciente
-        st.line_chart(paciente["rango_articular"])
+    st.markdown("---")
+    st.subheader("Sesiones")
 
-    st.write("")
-    
-    # Carga de Videos
-    st.subheader("📹 Cargar Sesión del Día")
-    video_file = st.file_uploader("Seleccionar toma lateral de la sesión (MP4, MOV)", type=["mp4", "mov"])
-    
-    if video_file is not None:
-        st.success("Archivo de video recibido.")
-        if st.button("Ejecutar Análisis Biomecánico", type="primary"):
-            st.info("Conectando con BiomechanicsService para extraer landmarks...")
+    for s in history:
+        with st.expander(
+            f"{s['session_date'][:10]} — {s['routine_name']} — "
+            f"IFI: {s['ifi_score'] or 'N/A'} — {s['status']}"
+        ):
+            if s["results"]:
+                for r in s["results"]:
+                    perf = r.get("performance", "N/A")
+                    rom = r.get("rom_percentage")
+                    color = (
+                        "🟢" if perf == "green"
+                        else "🟡" if perf == "yellow"
+                        else "🔴"
+                    )
+                    st.write(
+                        f"{color} ROM: {rom:.1f}%" if rom else f"{color} Sin datos"
+                    )
+            else:
+                st.write("Sin resultados de ejercicios.")
+
+    st.markdown("---")
+    if st.button("Nueva sesion para este paciente", type="primary"):
+        st.switch_page("pages/sessions/session_create_page.py")
 
 
-# Para que Streamlit dibuje la pantalla al abrir el archivo, 
-# recuperamos el ID de la sesión o usamos uno de prueba por defecto.
-id_actual = st.session_state.get("selected_patient_id", "PAC-001")
-render(id_actual)
+render()

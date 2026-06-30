@@ -73,3 +73,8 @@ def get_patient_history_use_case():
     """Use case para obtener historial de un paciente."""
     from app.use_cases.patients.get_patient_history_use_case import GetPatientHistoryUseCase
     return GetPatientHistoryUseCase(get_supabase_admin_client())
+
+def get_register_professional_use_case():
+    """Use case para dar de alta profesionales con Auth sincronizado."""
+    from app.use_cases.auth.register_professional_use_case import RegisterProfessionalUseCase
+    return RegisterProfessionalUseCase(get_supabase_admin_client())
