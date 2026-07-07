@@ -1,0 +1,18 @@
+[theme]
+# Color principal para botones (primary), links y elementos activos (Tu Naranja)
+primaryColor = "#F9A826"
+
+# Color de fondo de la barra lateral (Tu Verde Petróleo)
+sidebarBackgroundColor = "#1A4049"
+
+# Color de fondo principal de la app (Blanco/Claro para buen contraste)
+backgroundColor = "#FFFFFF"
+
+# Color de fondo secundario (para tarjetas y bloques nativos)
+secondaryBackgroundColor = "#FFF0E0"
+
+# Color del texto principal
+textColor = "#1A4049"
+
+# Fuente tipográfica limpia
+font = "sans serif"

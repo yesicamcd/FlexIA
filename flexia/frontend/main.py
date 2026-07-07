@@ -7,7 +7,7 @@ from frontend.state.auth_state import is_authenticated, get_current_user, clear_
 
 st.set_page_config(
     page_title="FlexIA",
-    page_icon="💪",
+    page_icon="frontend/logo.png",  # <-- Acá cambiamos el emoji por la ruta de tu imagen
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -32,13 +32,15 @@ with st.sidebar:
 # Definimos el menú solo con las páginas que sabemos que existen y armamos
 paginas = st.navigation([
     st.Page("pages/dashboards/clinical_dashboard_page.py",
-            title="Dashboard", icon="📊"),
+            title="Dashboard"),
     st.Page("pages/patients/patient_list_page.py",
-            title="Pacientes", icon="📋"),
+            title="Pacientes"),
     st.Page("pages/patients/patient_detail_page.py",
-            title="Detalle Paciente", icon="👤"),
+            title="Detalle Paciente"),
+    st.Page("pages/patients/patient_form_page.py",
+            title="Nuevo Paciente"),
     st.Page("pages/sessions/session_create_page.py",
-            title="Nueva Sesion", icon="▶️"),
+            title="Nueva Sesion"),
 ])
 
 # Ejecutamos la navegación
